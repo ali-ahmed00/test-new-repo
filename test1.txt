@@ -1,3 +1,5 @@
 this will be my secret file 
 change here from test1 branch
 sdsdsds
+
+i am new conflict in other branch
