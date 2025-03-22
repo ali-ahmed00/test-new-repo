@@ -5,9 +5,13 @@ sdsdsds
 i am new conflict in other branch
 
 new conf in master 
-master conf
+
+
+=======
 
 
 
 slash conf i line 9
+from ali branch
+
 
