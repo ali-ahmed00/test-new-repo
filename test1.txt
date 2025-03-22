@@ -6,4 +6,8 @@ i am new conflict in other branch
 
 new conf in master 
 master conf
-master new conflict
+
+
+
+slash conf i line 9
+
