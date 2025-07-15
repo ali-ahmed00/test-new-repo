@@ -2,35 +2,43 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Box Game</title>
+    <title>Markerless AR Falling Boxes</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
-      #startButton {
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+        background: black;
+      }
+      #enter-ar {
         position: absolute;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 10;
-        background: white;
-        border: none;
+        padding: 14px 26px;
         font-size: 18px;
-        padding: 12px 24px;
-        border-radius: 6px;
+        border-radius: 8px;
+        border: none;
+        background: white;
+        color: black;
+        z-index: 10;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
-    <button id="startButton">Start AR</button>
+    <button id="enter-ar">Start AR</button>
 
     <a-scene
-      vr-mode-ui="enabled: false"
-      renderer="antialias: true; alpha: true;"
-      embedded
       xr-mode="immersive-ar"
-      webxr="requiredFeatures: hit-test;"
+      webxr="requiredFeatures: hit-test"
+      embedded
+      renderer="antialias: true; alpha: true;"
+      vr-mode-ui="enabled: false"
     >
       <a-camera
         raycaster="objects: .clickable"
@@ -41,17 +49,19 @@
       <a-entity id="game-container"></a-entity>
 
       <script>
-        // Register falling and clickable behavior
+        // Falling object behavior
         AFRAME.registerComponent('falling-box', {
           schema: { speed: { default: 0.01 } },
           init: function () {
             this.el.classList.add('clickable');
             this.el.addEventListener('click', () => {
-              this.el.parentNode?.removeChild(this.el);
+              if (this.el.parentNode) {
+                this.el.parentNode.removeChild(this.el);
+              }
             });
           },
           tick: function (time, delta) {
-            let pos = this.el.object3D.position;
+            const pos = this.el.object3D.position;
             pos.y -= this.data.speed * (delta / 16);
             if (pos.y < -2 && this.el.parentNode) {
               this.el.parentNode.removeChild(this.el);
@@ -59,7 +69,6 @@
           }
         });
 
-        // Spawner
         function spawnBox() {
           const box = document.createElement('a-box');
           box.setAttribute('position', {
@@ -73,15 +82,19 @@
           document.querySelector('#game-container').appendChild(box);
         }
 
-        // Button to start AR session
-        document.getElementById('startButton').addEventListener('click', async () => {
-          const scene = document.querySelector('a-scene');
-          if (scene && scene.enterAR) {
-            await scene.enterAR();
-            document.getElementById('startButton').style.display = 'none';
-            setInterval(spawnBox, 1500);
-          } else {
-            alert('AR not supported on this device/browser.');
+        document.getElementById('enter-ar').addEventListener('click', async () => {
+          try {
+            const scene = document.querySelector('a-scene');
+            if (scene && scene.enterAR) {
+              await scene.enterAR(); // must be triggered by gesture
+              document.getElementById('enter-ar').style.display = 'none';
+              setInterval(spawnBox, 1500);
+            } else {
+              alert('WebXR not supported on this device/browser.');
+            }
+          } catch (err) {
+            alert('Error starting AR: ' + err.message);
+            console.error(err);
           }
         });
       </script>
