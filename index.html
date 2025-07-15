@@ -2,42 +2,35 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Markerless AR Game</title>
+    <title>AR Box Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: black;
-        height: 100%;
-        width: 100%;
-      }
-
-      #enter-ar {
+      body { margin: 0; overflow: hidden; }
+      #startButton {
         position: absolute;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
+        z-index: 10;
         background: white;
-        color: black;
-        padding: 12px 24px;
+        border: none;
         font-size: 18px;
+        padding: 12px 24px;
         border-radius: 6px;
-        z-index: 9999;
-        cursor: pointer;
       }
     </style>
   </head>
   <body>
-    <button id="enter-ar">Start AR</button>
+    <button id="startButton">Start AR</button>
 
     <a-scene
+      vr-mode-ui="enabled: false"
+      renderer="antialias: true; alpha: true;"
       embedded
       xr-mode="immersive-ar"
-      renderer="antialias: true; alpha: true;"
-      webxr="requiredFeatures: hit-test; optionalFeatures: dom-overlay; overlayElement: #enter-ar"
+      webxr="requiredFeatures: hit-test;"
     >
       <a-camera
         raycaster="objects: .clickable"
@@ -48,49 +41,48 @@
       <a-entity id="game-container"></a-entity>
 
       <script>
+        // Register falling and clickable behavior
         AFRAME.registerComponent('falling-box', {
           schema: { speed: { default: 0.01 } },
           init: function () {
             this.el.classList.add('clickable');
             this.el.addEventListener('click', () => {
-              if (this.el.parentNode) {
-                this.el.parentNode.removeChild(this.el);
-              }
+              this.el.parentNode?.removeChild(this.el);
             });
           },
           tick: function (time, delta) {
             let pos = this.el.object3D.position;
             pos.y -= this.data.speed * (delta / 16);
-            if (pos.y < -1.5 && this.el.parentNode) {
+            if (pos.y < -2 && this.el.parentNode) {
               this.el.parentNode.removeChild(this.el);
             }
           }
         });
 
+        // Spawner
         function spawnBox() {
           const box = document.createElement('a-box');
           box.setAttribute('position', {
-            x: (Math.random() - 0.5) * 2,
+            x: (Math.random() - 0.5) * 1.5,
             y: 2,
-            z: (Math.random() - 0.5) * 2
+            z: (Math.random() - 0.5) * 1.5
           });
           box.setAttribute('scale', '0.3 0.3 0.3');
           box.setAttribute('color', '#' + Math.floor(Math.random() * 16777215).toString(16));
           box.setAttribute('falling-box', 'speed: 0.015');
-
           document.querySelector('#game-container').appendChild(box);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-          document.getElementById('enter-ar').addEventListener('click', async () => {
-            const scene = document.querySelector('a-scene');
-            if (scene && scene.renderer.xr) {
-              scene.renderer.xr.enabled = true;
-              await scene.enterAR();
-              document.getElementById('enter-ar').style.display = 'none';
-              setInterval(spawnBox, 1500);
-            }
-          });
+        // Button to start AR session
+        document.getElementById('startButton').addEventListener('click', async () => {
+          const scene = document.querySelector('a-scene');
+          if (scene && scene.enterAR) {
+            await scene.enterAR();
+            document.getElementById('startButton').style.display = 'none';
+            setInterval(spawnBox, 1500);
+          } else {
+            alert('AR not supported on this device/browser.');
+          }
         });
       </script>
     </a-scene>
