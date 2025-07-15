@@ -1,44 +1,57 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <title>WebXR Markerless AR Game</title>
+    <meta charset="utf-8">
+    <title>Markerless AR Game</title>
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
       html, body {
         margin: 0;
+        padding: 0;
         overflow: hidden;
-        width: 100%;
-        height: 100%;
         background: black;
+        height: 100%;
+        width: 100%;
+      }
+
+      #enter-ar {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        color: black;
+        padding: 12px 24px;
+        font-size: 18px;
+        border-radius: 6px;
+        z-index: 9999;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
+    <button id="enter-ar">Start AR</button>
+
     <a-scene
       embedded
-      vr-mode-ui="enabled: false"
-      renderer="antialias: true; alpha: true;"
-      webxr="optionalFeatures: hit-test, dom-overlay; overlayElement: document.body;"
       xr-mode="immersive-ar"
-      background="color: #000000"
+      renderer="antialias: true; alpha: true;"
+      webxr="requiredFeatures: hit-test; optionalFeatures: dom-overlay; overlayElement: #enter-ar"
     >
-
       <a-camera
         raycaster="objects: .clickable"
-        cursor="fuse: false; rayOrigin: mouse"
+        cursor="rayOrigin: mouse"
         position="0 1.6 0">
       </a-camera>
 
-      <a-entity id="container"></a-entity>
+      <a-entity id="game-container"></a-entity>
 
       <script>
         AFRAME.registerComponent('falling-box', {
           schema: { speed: { default: 0.01 } },
           init: function () {
             this.el.classList.add('clickable');
-
             this.el.addEventListener('click', () => {
               if (this.el.parentNode) {
                 this.el.parentNode.removeChild(this.el);
@@ -54,7 +67,7 @@
           }
         });
 
-        function spawnFallingBox() {
+        function spawnBox() {
           const box = document.createElement('a-box');
           box.setAttribute('position', {
             x: (Math.random() - 0.5) * 2,
@@ -63,21 +76,23 @@
           });
           box.setAttribute('scale', '0.3 0.3 0.3');
           box.setAttribute('color', '#' + Math.floor(Math.random() * 16777215).toString(16));
-          box.setAttribute('falling-box', 'speed: 0.01');
+          box.setAttribute('falling-box', 'speed: 0.015');
 
-          document.querySelector('#container').appendChild(box);
+          document.querySelector('#game-container').appendChild(box);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-          setInterval(spawnFallingBox, 1500);
+          document.getElementById('enter-ar').addEventListener('click', async () => {
+            const scene = document.querySelector('a-scene');
+            if (scene && scene.renderer.xr) {
+              scene.renderer.xr.enabled = true;
+              await scene.enterAR();
+              document.getElementById('enter-ar').style.display = 'none';
+              setInterval(spawnBox, 1500);
+            }
+          });
         });
-
-        // Force enable AR session on click
-        document.body.addEventListener('click', () => {
-          const scene = document.querySelector('a-scene');
-          if (scene && scene.xrSession == null && scene.renderer.xr) {
-            scene.renderer.xr.enabled = true;
-            scene.enterAR();
-          }
-        });
-      </sc
+      </script>
+    </a-scene>
+  </body>
+</html>
