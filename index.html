@@ -2,41 +2,43 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR Falling Game - Markerless</title>
+    <title>WebXR Markerless AR Game</title>
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
-      body, html { margin: 0; overflow: hidden; width: 100%; height: 100%; }
+      html, body {
+        margin: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: black;
+      }
     </style>
   </head>
   <body>
     <a-scene
-      webxr="optionalFeatures: hit-test, dom-overlay; overlayElement: #overlay"
-      vr-mode-ui="enabled: false"
-      arjs
       embedded
-      renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+      vr-mode-ui="enabled: false"
+      renderer="antialias: true; alpha: true;"
+      webxr="optionalFeatures: hit-test, dom-overlay; overlayElement: document.body;"
+      xr-mode="immersive-ar"
+      background="color: #000000"
     >
-      <!-- Ground -->
-      <a-entity id="ground" geometry="primitive: plane; width: 20; height: 20"
-                rotation="-90 0 0" material="color: #888; opacity: 0.2" visible="false">
-      </a-entity>
 
-      <!-- Falling object container -->
-      <a-entity id="falling-container"></a-entity>
+      <a-camera
+        raycaster="objects: .clickable"
+        cursor="fuse: false; rayOrigin: mouse"
+        position="0 1.6 0">
+      </a-camera>
 
-      <!-- Camera -->
-      <a-camera position="0 1.6 0" wasd-controls-enabled="false" look-controls-enabled="true" raycaster="objects: .clickable"></a-camera>
+      <a-entity id="container"></a-entity>
 
       <script>
-        AFRAME.registerComponent('falling-object', {
-          schema: {
-            speed: { default: 0.01 }
-          },
+        AFRAME.registerComponent('falling-box', {
+          schema: { speed: { default: 0.01 } },
           init: function () {
-            // Make this object clickable
             this.el.classList.add('clickable');
 
-            // Touch event
             this.el.addEventListener('click', () => {
               if (this.el.parentNode) {
                 this.el.parentNode.removeChild(this.el);
@@ -44,20 +46,16 @@
             });
           },
           tick: function (time, delta) {
-            let pos = this.el.getAttribute('position');
+            let pos = this.el.object3D.position;
             pos.y -= this.data.speed * (delta / 16);
-            this.el.setAttribute('position', pos);
-
-            if (pos.y < -1) {
+            if (pos.y < -1.5 && this.el.parentNode) {
               this.el.parentNode.removeChild(this.el);
             }
           }
         });
 
-        function spawnBox() {
-          const container = document.querySelector('#falling-container');
+        function spawnFallingBox() {
           const box = document.createElement('a-box');
-
           box.setAttribute('position', {
             x: (Math.random() - 0.5) * 2,
             y: 2,
@@ -65,30 +63,21 @@
           });
           box.setAttribute('scale', '0.3 0.3 0.3');
           box.setAttribute('color', '#' + Math.floor(Math.random() * 16777215).toString(16));
-          box.setAttribute('falling-object', 'speed: 0.01');
+          box.setAttribute('falling-box', 'speed: 0.01');
 
-          container.appendChild(box);
+          document.querySelector('#container').appendChild(box);
         }
 
-        // Wait until scene is fully loaded
-        window.addEventListener('DOMContentLoaded', () => {
-          setInterval(spawnBox, 1500);
+        document.addEventListener('DOMContentLoaded', () => {
+          setInterval(spawnFallingBox, 1500);
         });
 
-        // Fix touch for mobile
-        AFRAME.registerComponent('touch-fix', {
-          init: function () {
-            this.el.sceneEl.addEventListener('click', (e) => {
-              const target = e.target;
-              if (target && target.classList.contains('clickable')) {
-                target.emit('click');
-              }
-            });
+        // Force enable AR session on click
+        document.body.addEventListener('click', () => {
+          const scene = document.querySelector('a-scene');
+          if (scene && scene.xrSession == null && scene.renderer.xr) {
+            scene.renderer.xr.enabled = true;
+            scene.enterAR();
           }
         });
-
-        document.querySelector('a-scene').setAttribute('touch-fix', '');
-      </script>
-    </a-scene>
-  </body>
-</html>
+      </sc
