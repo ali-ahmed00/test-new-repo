@@ -1,101 +1,55 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <title>Markerless AR Falling Boxes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8" />
+    <title>AR.js Markerless Game</title>
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe/mindar-face-aframe.prod.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        height: 100%;
-        width: 100%;
-        background: black;
-      }
-      #enter-ar {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 14px 26px;
-        font-size: 18px;
-        border-radius: 8px;
-        border: none;
-        background: white;
-        color: black;
-        z-index: 10;
-        cursor: pointer;
-      }
+      html, body { margin: 0; overflow: hidden; width: 100%; height: 100%; }
     </style>
   </head>
   <body>
-    <button id="enter-ar">Start AR</button>
+    <a-scene mindar-face embedded color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights"
+             vr-mode-ui="enabled: false">
+      <a-entity mindar-face-camera></a-entity>
 
-    <a-scene
-      xr-mode="immersive-ar"
-      webxr="requiredFeatures: hit-test"
-      embedded
-      renderer="antialias: true; alpha: true;"
-      vr-mode-ui="enabled: false"
-    >
-      <a-camera
-        raycaster="objects: .clickable"
-        cursor="rayOrigin: mouse"
-        position="0 1.6 0">
-      </a-camera>
-
-      <a-entity id="game-container"></a-entity>
+      <a-entity id="spawner" position="0 0 -0.5"></a-entity>
 
       <script>
-        // Falling object behavior
         AFRAME.registerComponent('falling-box', {
-          schema: { speed: { default: 0.01 } },
+          schema: { speed: { default: 0.005 } },
           init: function () {
-            this.el.classList.add('clickable');
             this.el.addEventListener('click', () => {
-              if (this.el.parentNode) {
-                this.el.parentNode.removeChild(this.el);
-              }
+              this.el.parentNode.removeChild(this.el);
             });
           },
-          tick: function (time, delta) {
-            const pos = this.el.object3D.position;
-            pos.y -= this.data.speed * (delta / 16);
-            if (pos.y < -2 && this.el.parentNode) {
+          tick: function (time, deltaTime) {
+            let pos = this.el.object3D.position;
+            pos.y -= this.data.speed * (deltaTime / 16);
+            if (pos.y < -1.5) {
               this.el.parentNode.removeChild(this.el);
             }
           }
         });
 
         function spawnBox() {
+          const container = document.querySelector('#spawner');
           const box = document.createElement('a-box');
           box.setAttribute('position', {
-            x: (Math.random() - 0.5) * 1.5,
-            y: 2,
-            z: (Math.random() - 0.5) * 1.5
+            x: (Math.random() - 0.5) * 0.8,
+            y: 1.5,
+            z: (Math.random() - 0.5) * 0.8
           });
-          box.setAttribute('scale', '0.3 0.3 0.3');
-          box.setAttribute('color', '#' + Math.floor(Math.random() * 16777215).toString(16));
-          box.setAttribute('falling-box', 'speed: 0.015');
-          document.querySelector('#game-container').appendChild(box);
+          box.setAttribute('scale', '0.2 0.2 0.2');
+          box.setAttribute('color', '#'+Math.floor(Math.random()*16777215).toString(16));
+          box.setAttribute('falling-box', 'speed: 0.01');
+          container.appendChild(box);
         }
 
-        document.getElementById('enter-ar').addEventListener('click', async () => {
-          try {
-            const scene = document.querySelector('a-scene');
-            if (scene && scene.enterAR) {
-              await scene.enterAR(); // must be triggered by gesture
-              document.getElementById('enter-ar').style.display = 'none';
-              setInterval(spawnBox, 1500);
-            } else {
-              alert('WebXR not supported on this device/browser.');
-            }
-          } catch (err) {
-            alert('Error starting AR: ' + err.message);
-            console.error(err);
-          }
+        document.addEventListener('DOMContentLoaded', () => {
+          setInterval(spawnBox, 2000);
         });
       </script>
     </a-scene>
